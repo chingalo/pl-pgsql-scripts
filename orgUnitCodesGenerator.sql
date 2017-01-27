@@ -19,8 +19,7 @@ CREATE OR REPLACE FUNCTION getParentOrganisationUnitCode(parentid INT) RETURNS T
 	BEGIN		
 		FOR organisationUnit IN SELECT * FROM getOrganisationUnitsbyLevel() LOOP
 			IF organisationUnit.organisationunitid=parentid  THEN
-				code := organisationUnit.name;
-				--code := organisationUnit.code;				
+				code := organisationUnit.code;
 			END IF;
 		END LOOP;		
 		RETURN code;

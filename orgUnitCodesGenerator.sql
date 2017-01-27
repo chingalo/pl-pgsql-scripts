@@ -1,5 +1,6 @@
-DROP FUNCTION organisationUnitsCodeGenerator(INT);
+DROP FUNCTION organisationUnitsCodeGenerator();
 DROP FUNCTION getOrganisationUnitsbyLevel();
+DROP FUNCTION getParentOrganisationUnitCode(INT);
 DROP TYPE holder;
 
 --Village level = 5, water pint level = 6
@@ -10,49 +11,61 @@ CREATE  TYPE holder AS (organisationunitid INT,uid VARCHAR(11),name VARCHAR(50),
 -- function to get all ordered by orgunits
 CREATE OR REPLACE FUNCTION  getOrganisationUnitsbyLevel() RETURNS SETOF holder AS 'SELECT organisationunitid,uid,name,code,hierarchylevel,parentid FROM organisationunit ORDER BY created ASC;' language 'sql';
 
+
+
+--replace loops wijht appropriate function
+CREATE OR REPLACE FUNCTION getParentOrganisationUnitCode(parentid INT) RETURNS TEXT AS $$
+	DECLARE
+		organisationUnit holder%ROWTYPE;
+		code TEXT := '';
+	BEGIN
+		
+		FOR organisationUnit IN SELECT * FROM getOrganisationUnitsbyLevel() LOOP
+			IF organisationUnit.organisationunitid=parentid  THEN
+				code := organisationUnit.name;
+				--code := organisationUnit.code;				
+			END IF;
+		END LOOP;		
+		RETURN code;
+	END;
+	$$ LANGUAGE plpgsql; 
+
 -- function for code generations
-CREATE OR REPLACE FUNCTION organisationUnitsCodeGenerator(orgUnitLevel INT) RETURNS VOID AS $$
+CREATE OR REPLACE FUNCTION organisationUnitsCodeGenerator() RETURNS VOID AS $$
 	DECLARE
 		--variable to holder types
-		row holder%ROWTYPE;
+		organisationUnit holder%ROWTYPE;
+		parentOrganisationUnit holder%ROWTYPE;
 		villageLevel INT :=3;
 		waterPointLevel INT := 4;
 		counter INT:= 0;
-		code text :='';
-	BEGIN
-		
-		IF orgUnitLevel = villageLevel THEN		
-			code = '';
-			RAISE NOTICE '***** start Village with  level  : % ********', orgUnitLevel;
-			FOR row IN SELECT * FROM getOrganisationUnitsbyLevel() WHERE hierarchylevel = orgUnitLevel LOOP
-				IF  row.hierarchylevel = orgUnitLevel THEN
-					RAISE NOTICE 'Name : % Code : % Level : % Parentid : % Organisationunitid : %', row.name,row.code,row.hierarchylevel,row.parentid,row.organisationunitid;
-					code = upper(substr(row.name,0,4));
-					RAISE NOTICE 'New code %',code;
-				END IF;			
-			END LOOP;
-			RAISE NOTICE '***** End of level  : % ********', orgUnitLevel;
+		code VARCHAR(50) :='';
+		parentCode VARCHAR(50);
+	BEGIN	
+		counter := 0;
+		RAISE NOTICE '==== codes generation startts =======';
+		FOR organisationUnit IN SELECT * FROM getOrganisationUnitsbyLevel() LOOP
+			parentCode = getParentOrganisationUnitCode(organisationUnit.parentid);
+			IF  organisationUnit.hierarchylevel = villageLevel THEN				
+				code := upper(substr(organisationUnit.name,0,4));
+				code := CONCAT(CONCAT(parentCode,'.'),code);
+				RAISE NOTICE 'code for % is % parentCode : %',organisationUnit.name,code,parentCode;
 			
-		ELSIF orgUnitLevel = waterPointLevel THEN
-			code = '';
-			RAISE NOTICE '***** start waterpoints with level  : % ********', orgUnitLevel;
-			FOR row IN SELECT * FROM getOrganisationUnitsbyLevel() WHERE hierarchylevel = orgUnitLevel LOOP
-				counter := counter + 1;
-				IF  row.hierarchylevel = orgUnitLevel THEN
-					RAISE NOTICE 'Name : % Code : % Level : % Parentid : % Organisationunitid : %', row.name,row.code,row.hierarchylevel,row.parentid,row.organisationunitid;
-					--code = '' + counter;
-					RAISE NOTICE 'New code %',counter;
-				END IF;			
-			END LOOP;
-			RAISE NOTICE '***** End of level  : % ********', orgUnitLevel;
-		END IF;
-		
-		
+			ELSIF organisationUnit.hierarchylevel = waterPointLevel THEN	
+				counter :=counter + 1;
+				--counter::text typecast interger into string
+				IF counter > 9 THEN
+					code := counter::text;
+				ELSE
+					code := CONCAT('0',counter::text);
+				END IF;		
+				code := CONCAT(CONCAT(parentCode,'.'),code);				
+				RAISE NOTICE 'code for % is % parentCode %',organisationUnit.name,code,parentCode;
+			END IF;	
+
+		END LOOP;				
 	END;
-	$$ LANGUAGE plpgsql; 
-	
-	
+	$$ LANGUAGE plpgsql; 	
 
 --- gerate codes
-SELECT organisationUnitsCodeGenerator(3);
-SELECT organisationUnitsCodeGenerator(4);
+SELECT organisationUnitsCodeGenerator();

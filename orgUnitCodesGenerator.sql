@@ -39,38 +39,46 @@ CREATE OR REPLACE FUNCTION organisationUnitsCodeGenerator() RETURNS VOID AS $$
 		organisationUnit holder%ROWTYPE;
 		waterPoint holder%ROWTYPE;
 		wardLevel INT :=4;
-		villageLevel INT :=5;
+		villageLevel INT :=4;
+		orgunitId INT;
 		counter INT:= 0;
-		code VARCHAR(50) :='';
+		newCode VARCHAR(50) :='';
 		parentCode VARCHAR(50);
 	BEGIN
 		-- fix for testing parentid = 4096
 		FOR organisationUnit IN SELECT * FROM getOrganisationUnitsbyLevel() LOOP			
 			parentCode := getParentOrganisationUnitCode(organisationUnit.parentid);
 			IF  organisationUnit.hierarchylevel = villageLevel THEN
+				orgunitId := organisationUnit.organisationunitid;
 				RAISE NOTICE '**************************************************************************************************';	
 				RAISE NOTICE '****************** Starting code genration for  % village *******************',organisationUnit.name;
 				RAISE NOTICE '**************************************************************************************************';
-				--checking for code uniqueness
-				code := upper(substr(organisationUnit.name,0,4));
-				code := CONCAT(CONCAT(parentCode,'.'),code);
-				RAISE NOTICE 'Code for % is % ',organisationUnit.name,code; 
-				--update codes 
+				--checking for code uniqueness need to be redu
+				newCode := upper(substr(organisationUnit.name,0,4));
+				newCode := CONCAT(CONCAT(parentCode,'.'),newCode);
+				RAISE NOTICE 'Code for % is % ',organisationUnit.name,newCode; 
+				
+				--update codes 				
+				UPDATE organisationunit  SET code = newCode WHERE organisationunitid = orgunitId;
 				
 				RAISE NOTICE '==== codes generation water points in  % villages=======',organisationUnit.name;
 				counter := 0;
 				FOR waterPoint IN SELECT * FROM getOrganisationUnitsbyLevel() WHERE parentid= organisationUnit.organisationunitid LOOP
+					orgunitId = waterPoint.organisationunitid;
 					counter := counter + 1;
 					parentCode := getParentOrganisationUnitCode(waterPoint.parentid);
 					--counter::text typecast interger into string
 					IF counter > 9 THEN
-						code := counter::text;
+						newCode := counter::text;
 					ELSE
-						code := CONCAT('0',counter::text);
+						newCode := CONCAT('0',counter::text);
 					END IF;	
-					code := CONCAT(CONCAT(parentCode,'.'),code);
+					newCode := CONCAT(CONCAT(parentCode,'.'),newCode);
+					
 					--update code				
-				RAISE NOTICE 'Code for % is % ',waterPoint.name,code;
+					UPDATE organisationunit  SET code = newCode WHERE organisationunitid = orgunitId;
+					RAISE NOTICE 'Code for % is % ',waterPoint.name,newCode;
+					
 				END LOOP;
 				RAISE NOTICE '**************************************************************************************************';	
 				RAISE NOTICE '******************* End code genration for  % village ******************',organisationUnit.name;

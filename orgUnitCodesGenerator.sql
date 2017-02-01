@@ -23,10 +23,7 @@ BEGIN
     UPDATE organisationunit  SET code = newCode WHERE organisationunitid = orgunitId; --AND code = '';
      EXCEPTION WHEN  unique_violation THEN
 		newCode :=CONCAT(newCode,orgunitId::TEXT);
-		RAISE NOTICE 'vaolate uniqueness on orgunit with % and code %',orgunitId,newCode;
-		--UPDATE organisationunit  SET code = newCode WHERE organisationunitid = orgunitId;
-   
-		
+		--RAISE NOTICE 'vaolate uniqueness on orgunit with % and code %',orgunitId,newCode;
 		--UPDATE organisationunit  SET code = newCode WHERE organisationunitid = orgunitId;
 END;
 $$
@@ -54,6 +51,7 @@ CREATE OR REPLACE FUNCTION organisationUnitsCodeGenerator() RETURNS VOID AS $$
 	DECLARE
 		--variable to holder types
 		organisationUnit holder%ROWTYPE;
+		village holder%ROWTYPE;
 		waterPoint holder%ROWTYPE;
 		districtLevel INT :=3;
 		wardLevel INT :=4;
@@ -63,22 +61,20 @@ CREATE OR REPLACE FUNCTION organisationUnitsCodeGenerator() RETURNS VOID AS $$
 		newCode VARCHAR(50) :='';
 		parentCode VARCHAR(50);
 	BEGIN
-		-- fix for testing parentid = 4096
-		FOR organisationUnit IN SELECT * FROM getOrganisationUnitsbyLevel() WHERE hierarchylevel > wardLevel LOOP			
-			parentCode := getParentOrganisationUnitCode(organisationUnit.parentid);
-			IF  organisationUnit.hierarchylevel = villageLevel THEN
-				orgunitId := organisationUnit.organisationunitid;
-				RAISE INFO 'Starting code generation for % village at % ',organisationUnit.name,now();
-				--checking for code uniqueness need to be redu
-				newCode := upper(substr(organisationUnit.name,0,4));
-				newCode := CONCAT(CONCAT(parentCode,'.'),newCode);
-				
+		-- fix values  for testing parentid = 4096
+		FOR organisationUnit IN SELECT * FROM getOrganisationUnitsbyLevel() WHERE hierarchylevel = wardLevel LOOP			
+			RAISE INFO 'Starting code generation for % ward at % ',organisationUnit.name,now();
+			FOR village IN SELECT * FROM getOrganisationUnitsbyLevel() WHERE parentid = organisationUnit.organisationunitid LOOP			
+				parentCode := getParentOrganisationUnitCode(village.parentid);
+				orgunitId := village.organisationunitid;				
+				--checking for code uniqueness need to revist
+				newCode := upper(substr(village.name,0,4));
+				newCode := CONCAT(CONCAT(parentCode,'.'),newCode);				
 				--update codes 				
 				PERFORM updateOrganisationUnitCodes(orgunitId,newCode);
-				
-				--RAISE INFO 'Starting code generation of water points for% village  at % ',organisationUnit.name,now();
 				counter := 0;
-				FOR waterPoint IN SELECT * FROM getOrganisationUnitsbyLevel() WHERE parentid= organisationUnit.organisationunitid LOOP
+				--update codes for villages
+				FOR waterPoint IN SELECT * FROM getOrganisationUnitsbyLevel() WHERE parentid = village.organisationunitid LOOP
 					orgunitId = waterPoint.organisationunitid;
 					counter := counter + 1;
 					parentCode := getParentOrganisationUnitCode(waterPoint.parentid);
@@ -88,17 +84,14 @@ CREATE OR REPLACE FUNCTION organisationUnitsCodeGenerator() RETURNS VOID AS $$
 					ELSE
 						newCode := CONCAT('0',counter::text);
 					END IF;	
-					newCode := CONCAT(CONCAT(parentCode,'.'),newCode);
-					
+					newCode := CONCAT(CONCAT(parentCode,'.'),newCode);					
 					--update codes 				
 					PERFORM updateOrganisationUnitCodes(orgunitId,newCode);
 					
-				END LOOP;
-				RAISE INFO 'Ending code generation for % village at % ',organisationUnit.name,now();
-			ELSE
-			RAISE WARNING '******************skip code generation for % ***********',organisationUnit.name;
-			END IF;	
-			
+				END LOOP;				
+			END LOOP;
+		
+			RAISE INFO 'Ending code generation for % ward at % ',organisationUnit.name,now();			
 		END LOOP;				
 	END;
 	$$ LANGUAGE plpgsql; 	

@@ -1,7 +1,6 @@
 DROP FUNCTION organisationUnitsCodeGenerator();
 DROP FUNCTION getOrganisationUnitsbyLevel();
 DROP FUNCTION getParentOrganisationUnitCode(INT);
-DROP FUNCTION updateOrganisationUnitCodes(INT,VARCHAR);
 DROP TYPE holder;
 
 -- ward level = 4, Village level = 5, water pint level = 6
@@ -29,23 +28,6 @@ END;
 $$
 LANGUAGE plpgsql;
 
-
---replace loops with appropriate function
-CREATE OR REPLACE FUNCTION getParentOrganisationUnitCode(parentid INT) RETURNS TEXT AS $$
-	DECLARE
-		organisationUnit holder%ROWTYPE;
-		code TEXT := '';
-	BEGIN		
-		FOR organisationUnit IN SELECT * FROM getOrganisationUnitsbyLevel() LOOP
-			IF organisationUnit.organisationunitid=parentid  THEN
-				code := organisationUnit.code;
-			END IF;
-		END LOOP;		
-		RETURN code;
-	END;
-	$$ LANGUAGE plpgsql; 
-
-
 -- function for code generations
 CREATE OR REPLACE FUNCTION organisationUnitsCodeGenerator() RETURNS VOID AS $$
 	DECLARE
@@ -63,9 +45,9 @@ CREATE OR REPLACE FUNCTION organisationUnitsCodeGenerator() RETURNS VOID AS $$
 	BEGIN
 		-- fix values  for testing parentid = 4096
 		FOR organisationUnit IN SELECT * FROM getOrganisationUnitsbyLevel() WHERE hierarchylevel = wardLevel LOOP			
-			RAISE INFO 'Starting code generation for % ward at % ',organisationUnit.name,now();
+			RAISE INFO 'Starting code generation for % ward ',organisationUnit.name;
 			FOR village IN SELECT * FROM getOrganisationUnitsbyLevel() WHERE parentid = organisationUnit.organisationunitid LOOP			
-				parentCode := getParentOrganisationUnitCode(village.parentid);
+				parentCode := organisationUnit.code;
 				orgunitId := village.organisationunitid;				
 				--checking for code uniqueness need to revist
 				newCode := upper(substr(village.name,0,4));
@@ -77,7 +59,7 @@ CREATE OR REPLACE FUNCTION organisationUnitsCodeGenerator() RETURNS VOID AS $$
 				FOR waterPoint IN SELECT * FROM getOrganisationUnitsbyLevel() WHERE parentid = village.organisationunitid LOOP
 					orgunitId = waterPoint.organisationunitid;
 					counter := counter + 1;
-					parentCode := getParentOrganisationUnitCode(waterPoint.parentid);
+					parentCode := village.code;
 					--counter::text typecast interger into string
 					IF counter > 9 THEN
 						newCode := counter::text;
@@ -91,7 +73,7 @@ CREATE OR REPLACE FUNCTION organisationUnitsCodeGenerator() RETURNS VOID AS $$
 				END LOOP;				
 			END LOOP;
 		
-			RAISE INFO 'Ending code generation for % ward at % ',organisationUnit.name,now();			
+			RAISE INFO 'Ending code generation for % ward ',organisationUnit.name;			
 		END LOOP;				
 	END;
 	$$ LANGUAGE plpgsql; 	

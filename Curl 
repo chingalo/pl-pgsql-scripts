@@ -1,0 +1,4 @@
+
+curl -d @/home/chingalo/development/scripts/hismSmsComandObject.json "http://localhost:8080/dhis/api/dataStore/sms/commands" -H "Content-Type:application/json" -u admin:district -v
+
+curl "http://localhost:8080/dhis/api/dataStore/sms/commands" -X DELETE -u admin:district -v

@@ -1,0 +1,39 @@
+
+
+SELECT programstageinstance.uid AS eventID FROM programstageinstance INNER JOIN trackedentitydatavalue ON programstageinstance.programstageinstanceid = trackedentitydatavalue.programstageinstanceid
+WHERE trackedentitydatavalue.value = '${value}' AND trackedentitydatavalue.dataelementid IN (SELECT dataelementid FROM dataelement WHERE uid = '${dataElement}');
+
+
+SELECT programstageinstance.uid AS eventID FROM programstageinstance INNER JOIN trackedentitydatavalue ON programstageinstance.programstageinstanceid = trackedentitydatavalue.programstageinstanceid
+WHERE trackedentitydatavalue.value = '${value}' AND trackedentitydatavalue.dataelementid IN (SELECT dataelementid FROM dataelement WHERE uid IN (select regexp_split_to_table('${dataElements}',' ')))
+
+
+
+SELECT programstageinstance.uid AS "event",programstageinstance.created,
+programstageinstance.duedate,programstage.uid AS "programStage",program.programid AS "program",
+programstageinstance.organisationunitid,programstageinstance.status,programstageinstance.longitude,
+programstageinstance.latitude,programstageinstance.storedby,organisationunit.name AS "orgUnitName",organisationunit.uid AS "orgUnit"
+,programstageinstance.programinstanceid,programstageinstance.programstageid,trackedentitydatavalue.value AS "value",
+trackedentitydatavalue.providedelsewhere AS "providedelsewhere",trackedentitydatavalue.storedby AS "storedby",trackedentitydatavalue.created AS "created",
+trackedentitydatavalue.lastupdated AS "lastupdated"
+FROM programstageinstance
+INNER JOIN trackedentitydatavalue ON trackedentitydatavalue.programstageinstanceid = programstageinstance.programstageinstanceid
+INNER JOIN dataelement ON dataelement.dataelementid = trackedentitydatavalue.dataelementid
+INNER JOIN programstage ON programstageinstance.programstageid = programstage.programstageid
+INNER JOIN programinstance ON programstageinstance.programinstanceid = programinstance.programinstanceid
+INNER JOIN program ON program.programid = programstage.programid
+INNER JOIN organisationunit ON organisationunit.organisationunitid = programstageinstance.organisationunitid;
+
+
+
+trackedentitydatavalue == dataValues
+
+
+SELECT COUNT(*) FROM programstageinstance INNER JOIN trackedentitydatavalue ON programstageinstance.programstageinstanceid = trackedentitydatavalue.programstageinstanceid
+WHERE trackedentitydatavalue.dataelementid IN (SELECT dataelementid FROM dataelement WHERE uid = 'MZbRqIcFB6A')
+
+
+dataElementId = MZbRqIcFB6A
+
+SELECT COUNT(*) FROM programstageinstance INNER JOIN trackedentitydatavalue ON programstageinstance.programstageinstanceid = trackedentitydatavalue.programstageinstanceid
+WHERE trackedentitydatavalue.dataelementid IN (SELECT dataelementid FROM dataelement WHERE uid = '${dataElementId}');

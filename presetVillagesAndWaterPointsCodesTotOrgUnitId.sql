@@ -18,7 +18,7 @@ CREATE OR REPLACE FUNCTION  getOrganisationUnits() RETURNS SETOF holder AS
 CREATE OR REPLACE FUNCTION updateOrganisationUnitCodes(orgunitId INT, newCode VARCHAR) RETURNS VOID AS
 $$
 BEGIN
-    UPDATE organisationunit  SET code = orgunitId WHERE organisationunitid = orgunitId;
+    UPDATE organisationunit  SET code = newCode WHERE organisationunitid = orgunitId;
     EXCEPTION WHEN  unique_violation THEN
 		RAISE NOTICE 'vaolate uniqueness on orgunit with % and code %',orgunitId,newCode;   
 END;
@@ -42,10 +42,10 @@ CREATE OR REPLACE FUNCTION organisationUnitsCodeGenerator() RETURNS VOID AS $$
 			RAISE INFO 'Starting preset codes in villages and water points in % ward ',organisationUnit.name;
 			FOR village IN SELECT * FROM getOrganisationUnits() WHERE parentid = organisationUnit.organisationunitid LOOP
 				orgunitId = village.organisationunitid;
-				PERFORM updateOrganisationUnitCodes(orgunitId,'');
+				PERFORM updateOrganisationUnitCodes(orgunitId,village.uid);
 				FOR waterPoint IN SELECT * FROM getOrganisationUnits() WHERE parentid = village.organisationunitid LOOP
 					orgunitId = waterPoint.organisationunitid;
-					PERFORM updateOrganisationUnitCodes(orgunitId,'');
+					PERFORM updateOrganisationUnitCodes(orgunitId,waterPoint.uid);
 					
 				END LOOP;				
 			END LOOP;

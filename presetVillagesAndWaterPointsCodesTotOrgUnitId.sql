@@ -37,21 +37,23 @@ CREATE OR REPLACE FUNCTION organisationUnitsCodeGenerator() RETURNS VOID AS $$
 		villageLevel INT :=5;
 		orgunitId INT;
 	BEGIN
-		-- fix values  for testing parentid = 4096
-		FOR organisationUnit IN SELECT * FROM getOrganisationUnits() WHERE hierarchylevel = wardLevel LOOP			
-			RAISE INFO 'Starting preset codes in villages and water points in % ward ',organisationUnit.name;
-			FOR village IN SELECT * FROM getOrganisationUnits() WHERE parentid = organisationUnit.organisationunitid LOOP
-				orgunitId = village.organisationunitid;
-				PERFORM updateOrganisationUnitCodes(orgunitId,village.uid);
-				FOR waterPoint IN SELECT * FROM getOrganisationUnits() WHERE parentid = village.organisationunitid LOOP
-					orgunitId = waterPoint.organisationunitid;
-					PERFORM updateOrganisationUnitCodes(orgunitId,waterPoint.uid);
-					
-				END LOOP;				
+		RAISE INFO '::::::::::::::::::::::::::::::::::::::::';
+		RAISE INFO ':::::::: Villages codes reseting to uid :::::::::::::::::';
+		RAISE INFO ':::::::::::::::::::::::::::::::::::::::::';
+		FOR ward IN SELECT * FROM getOrganisationUnits() WHERE hierarchylevel = wardLevel and code != '' LOOP
+			FOR village IN SELECT * FROM getOrganisationUnits() WHERE parentid = ward.organisationunitid LOOP
+				PERFORM updateOrganisationUnitCodes(orgunitId,village.uid);	
 			END LOOP;
+		END LOOP;
 		
-			RAISE INFO 'Ending preset codes in villages and water points in % ward ',organisationUnit.name;			
-		END LOOP;				
+		RAISE INFO '::::::::::::::::::::::::::::::::::::::::';
+		RAISE INFO ':::::::: Water points codes resting to uid:::::::::::::;';
+		RAISE INFO '::::::::::::::::::::::::::::::::::::::::';		
+		FOR village IN SELECT * FROM getOrganisationUnits() WHERE hierarchylevel = villageLevel LOOP
+			FOR waterPoint IN SELECT * FROM getOrganisationUnits() WHERE parentid = village.organisationunitid LOOP				
+				PERFORM updateOrganisationUnitCodes(orgunitId,waterPoint.uid);				
+			END LOOP;
+		END LOOP;
 	END;
 	$$ LANGUAGE plpgsql; 	
 

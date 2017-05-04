@@ -14,13 +14,16 @@ CREATE  TYPE holder AS (organisationunitid INT,uid VARCHAR(11),name VARCHAR(50),
 CREATE OR REPLACE FUNCTION  getOrganisationUnits() RETURNS SETOF holder AS 
 	'SELECT organisationunitid,uid,name,code,hierarchylevel,parentid FROM organisationunit ORDER BY created ASC;' 
 	language 'sql';
+	
+	
+
 
 
 --function to update code for a given organisation unit
 CREATE OR REPLACE FUNCTION updateOrganisationUnitCodes(orgunitId INT, newCode VARCHAR) RETURNS VOID AS
 $$
 BEGIN
-    UPDATE organisationunit  SET code = newCode WHERE organisationunitid = orgunitId;
+    UPDATE organisationunit  SET code = newCode WHERE organisationunitid = orgunitId; --AND code = '';
     EXCEPTION WHEN  unique_violation THEN
 		newCode := newCode;
 		RAISE NOTICE 'unique_violation on orgunit with % and code %',orgunitId,newCode;
@@ -62,8 +65,11 @@ BEGIN
 			secondLetterPosition := firstLetterPosition + 1;
 			thirdLetterPosition := secondLetterPosition + 1;
 		END IF;
-		RETURN getVillageCode(firstLetterPosition,secondLetterPosition,thirdLetterPosition,villageName,parentCode);
+		villageCode :=getVillageCode(firstLetterPosition,secondLetterPosition,thirdLetterPosition,villageName,parentCode);
+		RETURN villageCode;
 	ELSE
+		--PERFORM updateOrganisationUnitCodes(orgunitId,villageCode);
+		RAISE INFO 'Found village  and set code for village %  ::: code % ',villageName,villageCode;
 		RETURN villageCode;
 	END IF;	
 	
@@ -87,16 +93,18 @@ CREATE OR REPLACE FUNCTION villagesAndWaterPointsCodeGenerator() RETURNS VOID AS
 		newCode VARCHAR(50) :='';
 		parentCode VARCHAR(50);
 	BEGIN
+	
+		
 		RAISE INFO '::::::::::::::::::::::::::::::::::::::::';
-		RAISE INFO ':::::::: Resetting illages codes to uid :::::::::::::::::';
+		RAISE INFO ':::::::: Villages codes reseting to uid :::::::::::::::::';
 		RAISE INFO ':::::::::::::::::::::::::::::::::::::::::';
 		FOR village IN SELECT * FROM getOrganisationUnits() WHERE parentid IN (SELECT organisationunitid FROM getOrganisationUnits() WHERE hierarchylevel = wardLevel AND code != '') LOOP			
 			PERFORM updateOrganisationUnitCodes(orgunitId,village.uid);	
-			RAISE INFO 'village %  has been reset',village.name;
+			RAISE INFO 'village %  ::: ',village.name;
 		END LOOP;
 		
 		RAISE INFO '::::::::::::::::::::::::::::::::::::::::';
-		RAISE INFO '::::::::Resetting Water points codes to uid:::::::::::::;';
+		RAISE INFO ':::::::: Water points codes resting to uid:::::::::::::;';
 		RAISE INFO '::::::::::::::::::::::::::::::::::::::::';		
 		FOR waterPoint IN SELECT * FROM getOrganisationUnits() WHERE parentid IN (SELECT organisationunitid FROM getOrganisationUnits() WHERE parentid IN (SELECT organisationunitid FROM getOrganisationUnits() WHERE hierarchylevel = wardLevel AND code != '')) LOOP				
 			PERFORM updateOrganisationUnitCodes(orgunitId,waterPoint.uid);	
@@ -116,7 +124,6 @@ CREATE OR REPLACE FUNCTION villagesAndWaterPointsCodeGenerator() RETURNS VOID AS
 		RAISE INFO '::::::::::::::::::::::::::::::::::::::::';
 		RAISE INFO ':::::::: Villages codes :::::::::::::::::';
 		RAISE INFO ':::::::::::::::::::::::::::::::::::::::::';
-		
 		FOR village IN SELECT * FROM getOrganisationUnits() WHERE parentid IN (SELECT organisationunitid FROM getOrganisationUnits() WHERE hierarchylevel = wardLevel AND code != '') LOOP			
 			parentCode := (SELECT code FROM getOrganisationUnits() WHERE organisationunitid = village.parentid);
 			orgunitId := village.organisationunitid;
@@ -158,8 +165,6 @@ CREATE OR REPLACE FUNCTION villagesAndWaterPointsCodeGenerator() RETURNS VOID AS
 				
 			END LOOP;
 		END LOOP;
-		
-		
 		
 		
 	END;

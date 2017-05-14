@@ -50,7 +50,7 @@ DECLARE
 BEGIN	
 	RAISE INFO 'Start find code for village %  ',villageName;
 	villageCode :=getVillageCode(firstLetterPosition,secondLetterPosition,thirdLetterPosition,villageName,parentCode);
-	IF ((SELECT COUNT(code) FROM getOrganisationUnits() WHERE code = villageCode ) > 0) THEN
+	WHILE ((SELECT COUNT(code) FROM getOrganisationUnits() WHERE code = villageCode ) > 0) LOOP 	
 		RAISE INFO '::::::::::::::::::::::::::::::::::::::::';		
 		RAISE INFO 'Re-find code for village %  ',villageName;
 		thirdLetterPosition := thirdLetterPosition + 1;
@@ -62,10 +62,12 @@ BEGIN
 			secondLetterPosition := firstLetterPosition + 1;
 			thirdLetterPosition := secondLetterPosition + 1;
 		END IF;
-		RETURN getVillageCode(firstLetterPosition,secondLetterPosition,thirdLetterPosition,villageName,parentCode);
-	ELSE
-		RETURN villageCode;
-	END IF;	
+		RAISE INFO '% % % ',firstLetterPosition,secondLetterPosition,thirdLetterPosition;
+		villageCode :=getVillageCode(firstLetterPosition,secondLetterPosition,thirdLetterPosition,villageName,parentCode);
+	
+	END LOOP; 
+	
+	RETURN villageCode;
 	
 END;
 $$
@@ -90,17 +92,20 @@ CREATE OR REPLACE FUNCTION villagesAndWaterPointsCodeGenerator() RETURNS VOID AS
 		RAISE INFO '::::::::::::::::::::::::::::::::::::::::';
 		RAISE INFO ':::::::: Resetting illages codes to uid :::::::::::::::::';
 		RAISE INFO ':::::::::::::::::::::::::::::::::::::::::';
-		FOR village IN SELECT * FROM getOrganisationUnits() WHERE parentid IN (SELECT organisationunitid FROM getOrganisationUnits() WHERE hierarchylevel = wardLevel AND code != '') LOOP			
-			PERFORM updateOrganisationUnitCodes(orgunitId,village.uid);	
-			RAISE INFO 'village %  has been reset',village.name;
+		FOR village IN SELECT * FROM getOrganisationUnits() WHERE parentid IN (SELECT organisationunitid FROM getOrganisationUnits() WHERE hierarchylevel = wardLevel AND code != '') LOOP
+			UPDATE organisationunit  SET code = village.uid WHERE organisationunitid = village.organisationunitid;			
+			RAISE INFO 'village %  has been reset to %',village.name,(SELECT code FROM getOrganisationUnits() WHERE organisationunitid = village.organisationunitid);
 		END LOOP;
 		
 		RAISE INFO '::::::::::::::::::::::::::::::::::::::::';
 		RAISE INFO '::::::::Resetting Water points codes to uid:::::::::::::;';
-		RAISE INFO '::::::::::::::::::::::::::::::::::::::::';		
-		FOR waterPoint IN SELECT * FROM getOrganisationUnits() WHERE parentid IN (SELECT organisationunitid FROM getOrganisationUnits() WHERE parentid IN (SELECT organisationunitid FROM getOrganisationUnits() WHERE hierarchylevel = wardLevel AND code != '')) LOOP				
-			PERFORM updateOrganisationUnitCodes(orgunitId,waterPoint.uid);	
-			RAISE INFO ':::::::::::::%:::::::::::::::::::',waterPoint.name;			
+		RAISE INFO '::::::::::::::::::::::::::::::::::::::::';
+		FOR village IN SELECT * FROM getOrganisationUnits() WHERE parentid IN (SELECT organisationunitid FROM getOrganisationUnits() WHERE hierarchylevel = wardLevel AND code != '') LOOP			
+			RAISE INFO ':::::::::::::On Village : %:::::::::::::::::::',village.name;	
+			FOR waterPoint IN SELECT * FROM getOrganisationUnits() WHERE parentid = village.organisationunitid LOOP
+				UPDATE organisationunit  SET code = waterPoint.uid WHERE organisationunitid = waterPoint.organisationunitid;
+				RAISE INFO ':::::::::::::% has been reset to % :::::::::::::::',waterPoint.name, (SELECT code FROM getOrganisationUnits() WHERE organisationunitid = waterPoint.organisationunitid);				
+			END LOOP;
 		END LOOP;
 		
 		RAISE INFO '::::::::::::::::::::::::::::::::::::::::';
@@ -122,12 +127,8 @@ CREATE OR REPLACE FUNCTION villagesAndWaterPointsCodeGenerator() RETURNS VOID AS
 			orgunitId := village.organisationunitid;
 			newCode := getAndUpdateUniqueVillageCode(1,2,3,village.name,parentCode,orgunitId);
 			--update codes 				
-			PERFORM updateOrganisationUnitCodes(orgunitId,newCode);	
-			RAISE INFO '::::::::::::::::::::::::::::::::::::::::';
-			RAISE INFO '::::::::::::::::::::::::::::::::::::::::';
-			RAISE INFO 'village %  ::: code %  ::  parentcode %',village.name,newCode,parentCode;
-			RAISE INFO '::::::::::::::::::::::::::::::::::::::::';
-			RAISE INFO '::::::::::::::::::::::::::::::::::::::::';
+			UPDATE organisationunit  SET code = newCode WHERE organisationunitid = orgunitId;
+			RAISE INFO 'New code village %  is %  . It has been saved as  %',village.name,newCode,(SELECT code FROM getOrganisationUnits() WHERE organisationunitid = orgunitId);
 		END LOOP;
 		
 		--water points codesrtions
@@ -136,6 +137,7 @@ CREATE OR REPLACE FUNCTION villagesAndWaterPointsCodeGenerator() RETURNS VOID AS
 		RAISE INFO '::::::::::::::::::::::::::::::::::::::::';		
 		FOR village IN SELECT * FROM getOrganisationUnits() WHERE parentid IN (SELECT organisationunitid FROM getOrganisationUnits() WHERE hierarchylevel = wardLevel AND code != '') LOOP			
 			counter := 0;
+			RAISE INFO 'Water point code generation for % village',village.name;
 			--update codes for villages
 			FOR waterPoint IN SELECT * FROM getOrganisationUnits() WHERE parentid = village.organisationunitid LOOP
 				orgunitId = waterPoint.organisationunitid;
@@ -148,19 +150,18 @@ CREATE OR REPLACE FUNCTION villagesAndWaterPointsCodeGenerator() RETURNS VOID AS
 					newCode := CONCAT('0',counter::text);
 				END IF;	
 				newCode := CONCAT(CONCAT(parentCode,'.'),newCode);				
-				--update codes 				
+				--update codes
 				PERFORM updateOrganisationUnitCodes(orgunitId,newCode);
-				RAISE INFO '::::::::::::::::::::::::::::::::::::::::';
-				RAISE INFO '::::::::::::::::::::::::::::::::::::::::';
-				RAISE INFO 'water point %  ::: code %  ::  parentcode %',waterPoint.name,newCode,parentCode;
-				RAISE INFO '::::::::::::::::::::::::::::::::::::::::';
-				RAISE INFO '::::::::::::::::::::::::::::::::::::::::';
+				RAISE INFO 'New code water point %  is %  . It has been saved as  %',waterPoint.name,newCode,(SELECT code FROM getOrganisationUnits() WHERE organisationunitid = orgunitId);				
 				
 			END LOOP;
+			RAISE INFO '**** End of Water point code generation for % village***',village.name;
 		END LOOP;
 		
 		
-		
+		RAISE INFO '::::::::::::::::::::::::::::::::::::::::';
+		RAISE INFO ':::::::: The end good bye !!! :::::::::::::::::';
+		RAISE INFO ':::::::::::::::::::::::::::::::::::::::::';		
 		
 	END;
 	$$ LANGUAGE plpgsql; 	

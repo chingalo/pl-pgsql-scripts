@@ -1,0 +1,16 @@
+UPDATE dataelement SET description = 'Specify number of Nurses allocated', formname = '2.1.2 5. Number of Nurses allocated to this facility' WHERE uid = 'D621dxzoXnU';
+UPDATE dataelement SET description = 'Specify number of Medical Attendants allocated', formname = '2.1.2 6. Number of Medical Attendants allocated to this facility' WHERE uid = 'DzMSKhyzwlN';
+UPDATE dataelement SET description = 'Specify number Nurses available at the duty station', formname = '2.1.3 5 . Number of Nurses available  at the duty station' WHERE uid = 'kbAU1ugXADD';
+UPDATE dataelement SET description = 'Specify number Medical Attendants available at the duty station', formname = '2.1.3 6 . Number of Medical Attendants available  at the duty station' WHERE uid = 'djVZp4BFOtQ';
+UPDATE dataelement SET description = 'Specify number of Clinical Officers/ Clinical Assistant allocated', formname = '2.1.2 1. Number of Clinical Officers/ Clinical Assistant to this facility' WHERE uid = 'zsBUAPmk7rv';
+UPDATE dataelement SET description = 'Specify number of Assistant Medical officer allocated', formname = '2.1.2 2. Number of Assistant Medical officer to this facility' WHERE uid = 'r6M04ESAmRx';
+UPDATE dataelement SET description = 'Specify number of Nurses allocated', formname = '2.1.2 3. Number of Nurses allocated to this facility' WHERE uid = 'YHAAghvTYX5';
+UPDATE dataelement SET description = 'Specify number of Assistant Nursing officer allocated', formname = '2.1.2 4. Number of Assistant Nursing officer allocated to this facility' WHERE uid = 'pUYGw96nGsb';
+UPDATE dataelement SET description = 'Specify number of Nurses allocated', formname = '2.1.2 5. Number of Nurses allocated to this facility' WHERE uid = 'jGOZekeXqDW';
+UPDATE dataelement SET description = 'Specify number of Medical Attendants allocated', formname = '2.1.2 6. Number of Medical Attendants allocated to this facility' WHERE uid = 'ZbyUALZIFy7';
+UPDATE dataelement SET description = 'Specify number of Medical Officer available at the duty station', formname = '2.1.3 1. Number of Medical Officer available  at the duty station' WHERE uid = 'Xtn7f86LZkB';
+UPDATE dataelement SET description = 'Specify number of Assistant Medicals officer available at the duty station', formname = '2.1.3 2. Number of Assistant Medical officers available  at the duty station' WHERE uid = 'vK5xPFFxnSR';
+UPDATE dataelement SET description = 'Specify number of Nursing Officer available at the duty station', formname = '2.1.3 3. Number of Nursing Officer available  at the duty station' WHERE uid = 'A6nLos74bGu';
+UPDATE dataelement SET description = 'Specify number of Assistant Nursing officer available at the duty station', formname = '2.1.3 4. Number of  Assistant Nursing officer available  at the duty station' WHERE uid = 'vQeEa8TAA38';
+UPDATE dataelement SET description = 'Specify number of Nurses available at the duty station', formname = '2.1.3 5. Number of Nurses  available  at the duty station' WHERE uid = 'A6nLos74bGu';
+UPDATE dataelement SET description = 'Specify number of Medical Attendants available at the duty station', formname = '2.1.3 6. Number of Medical Attendants  available  at the duty station' WHERE uid = 'pVKentnp08h';

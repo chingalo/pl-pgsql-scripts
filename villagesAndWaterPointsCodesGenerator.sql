@@ -149,7 +149,7 @@ CREATE OR REPLACE FUNCTION villagesAndWaterPointsCodeGenerator() RETURNS VOID AS
 				ELSE
 					newCode := CONCAT('0',counter::text);
 				END IF;	
-				newCode := CONCAT(CONCAT(parentCode,'.'),newCode);				
+				newCode := CONCAT(parentCode,newCode);				
 				--update codes
 				PERFORM updateOrganisationUnitCodes(orgunitId,newCode);
 				RAISE INFO 'New code water point %  is %  . It has been saved as  %',waterPoint.name,newCode,(SELECT code FROM getOrganisationUnits() WHERE organisationunitid = orgunitId);				

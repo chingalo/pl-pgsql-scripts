@@ -6,16 +6,9 @@ DECLARE
 	temp_dir VARCHAR := '/home/chingalo/development/scripts/organisation-unit-app/data/'; --'data' folder is all backup storage folder during deletion process, it must have read and write permission 
 	_c text;
 	results VARCHAR;
-	
-	StartTime timestamptz;
-	EndTime timestamptz;
-	Delta interval;
 BEGIN
 
 	BEGIN
-	
-		--start timer
-		StartTime := clock_timestamp();
 		---prepare filter for organisaion unit
 		orgUnit_regex := CONCAT(CONCAT('%',orgunit),'%');
 		
@@ -109,17 +102,11 @@ BEGIN
 		RAISE INFO ':::::::: 	The end, Bye!!!!!!!!!! :::::::::::::::::';
 		RAISE INFO '::::::::::::::::::::::::::::::::::::::::::::::::::::';
 		results := 'success';
-		EndTime := clock_timestamp();
-		Delta := 1000 * ( extract(epoch from EndTime) - extract(epoch from StartTime) );		
-		RAISE NOTICE 'Duration in millisecs=%', Delta;	
 	
 	EXCEPTION WHEN OTHERS THEN
 		GET STACKED DIAGNOSTICS _c = PG_EXCEPTION_CONTEXT;
 		RAISE NOTICE 'context: >>%<<', _c;
 		results := CONCAT('Fail to delete  : ',_c);
-		EndTime := clock_timestamp();
-		Delta := 1000 * ( extract(epoch from EndTime) - extract(epoch from StartTime) );
-		RAISE NOTICE 'Duration in millisecs=%', Delta;
 	END;
 	
 	RETURN results;
@@ -130,6 +117,7 @@ LANGUAGE plpgsql;
 
 /*
  call delete function by pass orgunit id  zs9X8YYBOnK
+ copy datavalue from '/tmp/old_population_datavalues_2015.csv' DELIMITER ',' CSV HEADER;
 */
 SELECT deleteOrganisationUnit('zs9X8YYBOnK');
 
